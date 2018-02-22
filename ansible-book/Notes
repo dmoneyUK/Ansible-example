@@ -1,0 +1,141 @@
+##################################################################################################
+CREATING YOUR ENVIRONMENT
+##################################################################################################
+* create a file in that directory named Vagrantfile:
+	$ mkdir ansible-book && cd ansible-book
+	$ vagrant init ubuntu/trusty64
+
+* Once that file has been created, you can start your virtual machine by running vagrant up.
+	$ vagrant up
+
+* check this by running vagrant status:
+	$ vagrant status
+	Current machine states:
+	default                   running (virtualbox)
+
+* You can also log in to the virtual machine by running the command vagrant ssh. 
+	$ vagrant ssh
+	$ vagrant@vagrant-ubuntu-trusty-64:∼$ cat /etc/issue
+		Ubuntu 14.04.3 LTS \n \l 
+
+* Congratulations! You’ve just created and started a virtual machine with Vagrant. Now that you’ve done this, you’ll be able to follow along with me throughout the rest of the book. As you don’t need this virtual machine quite yet, let’s destroy it by running vagrant destroy:
+	 $ vagrant destroy
+
+* Open the Vagrantfile and tells Vagrant that it needs to create a virtual machine with 1024mb of memory.:
+		config.vm.provider "virtualbox" do |vb|
+ 			vb.memory = "1024"
+		end
+
+*  Tell Vagrant that we want to run Ansible on this virtual machine by adding some instructions to the Vagrantfile:
+		config.vm.provision "ansible" do |ansible|
+    		ansible.playbook = "provisioning/playbook.yml"
+		end
+	This tells Vagrant to use Ansible to run the playbook named playbook.yml inside a folder named provisioning in the current directory.
+	(If you do not have Ansible installed on your machine (for example, because you’re on Windows), you need to use the following configuration:
+		config.vm.provision "ansible_local" do |ansible|
+    		ansible.playbook = "provisioning/playbook.yml"
+		end
+	The only difference between these two pieces of configuration is that one uses ansible and the other uses ansible_local. Using ansible will run Ansible (which we installed earlier) on your local machine, while using ansible_local will log in to the virtual machine and run it there instead. You don’t need to worry about installing it on the virtual machine, as Vagrant will take care of the installation and configuration for you.)
+
+* Create a folder named provisioning and a file inside it named playbook.yml.
+
+##################################################################################################
+PLAYBOOK
+##################################################################################################
+Playbooks more closely resemble a model of a system than they do a programming language or script. With a few exceptions (which we’ll cover later), you define your desired state on a system and let Ansible ensure that your machines are currently in that state. For example, you can write a playbook that ensures that PHP is installed on the target machine. If it isn’t installed, Ansible will install it for you using the package manager that you tell it to use. If it does exist, Ansible will detect that and will not run any commands. Let’s write that playbook now.
+
+* YAML files start by defining any additional metadata that needs to be attached to a file (commonly known as front matter). 
+
+* Once you’ve closed your front matter, the first thing that you need to do is to tell Ansible where this playbook should run. You do this by specifying a host group on which to run. 
+	Now we’ll tell Ansible to run on all available hosts by adding - hosts
+		---
+		- hosts: all
+
+* Now that Ansible knows where to run, you can tell it what you want it to run. This is done by adding a section named tasks. Inside tasks, you are going to tell Ansible to just ping your machines to make sure that you can connect to them:
+(Thankfully, Ansible lets you add a name to each task to explain its purpose. Let’s do that to our ping action now:)
+		---
+		- hosts: all
+		  tasks:
+		   	- name: Make sure that we can connect to the machine
+		  	  ping:
+
+* Together, we’re going to be installing some open-source software that’s developed in PHP . Let’s add PHP by adding another entry to the playbook.yml file so that it looks like the following:
+(By default, Ansible will log in as the Vagrant user, which does not have permission to install packages. This is where the become option (that controls which user commands are run as) comes in handy. become can be added in two different places in your playbook. It can be added next to the task that requires more permissions, or it can be added on a per-playbook level, meaning that every command will be run with administrator permissions)
+		---
+		- hosts: all
+		  become: true
+ 		  tasks:
+   		    - name: Make sure that we can connect to the machine
+      		  ping:
+    	 	- name: Install PHP
+     		  apt: name=php5-cli state=present update_cache=yes
+
+* You can add more steps to install nginx and mySQL by adding more calls to the apt module saying that you expect nginx and mysql-server-5.6 to be present.
+(A brief explanation of how this works is that you provide a list of items inside a key named with_items. Ansible will then call your task once for each item in the list. The value of each item is available via the special {{item}} notation. Once you’ve made these changes, your playbook should look like this)
+		---
+		- hosts: all
+		  become: true
+		  tasks:
+		    - name: Install required packages
+		      apt: name={{item}} state=present update_cache=yes
+		      with_items:
+        		- php5-cli
+        		- nginx
+        		- mysql-server-5.6
+
+*  In Ansible terms, a playbook is considered idempotent if you can run it multiple times and after the first run the machine is in a certain state, which doesn’t change if you run the same playbook again at any point in time after that.
+
+##################################################################################################
+Inventory File
+##################################################################################################
+The tool that you’re using needs to know which machines it should run on. This is known as an inventory. As there is no central server in Ansible, we will need another way to get all of this information to the code that runs to enforce the desired state. This is where the inventory file comes in.
+
+* Maintain a different inventory file for each project that you have and pass it to both the ansible and ansible-playbook commands using the –i option:
+	$ ansible all –i /path/to/inventory –m ping
+
+* The inventory file in Ansible can be either an INI file or a JSON file. They can be as simple as a list of host names to run against. The following is an example of a simple inventory file:
+	host1.example.com
+	host2.example.com
+	host3.example.com
+	192.168.9.29
+
+* (Optional) Running without Vagrant: 
+	** uncomment the line in the vagrant file: 
+		config.vm.network "private_network", ip: "192.168.33.10"
+	** create a file and add content:
+		192.168.33.10 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/default/virtualbox/private_key
+	** Restrart Vagrant:
+		vagrant halt/vagrant up
+	** Run ansible playbook with inventory file:
+		ansible-playbook –i inventory provisioning/playbook.yml   
+
+* Configuration Options in the Inventory: Here’s an example inventory file that uses some of these options:
+	alpha.example.com ansible_user=bob ansible_port=50022
+	bravo.example.com ansible_user=mary ansible_ssh_private_key_file=/path/to/mary.key
+	frontend.example.com ansible_port=50022
+	yellow.example.com ansible_host=192.168.33.10
+
+* Privilege-escalation options can be set in the inventory file, but they won’t actually be used unless you set become: true in your playbooks. By default, become will elevate you to the root level. Given the following inventory file, alpha and bravo will both use the automation user when become: true is set in a playbook. frontend will use the ansible user, and yellow will use root, which is the default:
+	alpha.example.com ansible_become_user=automation
+	bravo.example.com ansible_become_user=automation
+	frontend.example.com ansible_become_user=ansible
+	yellow.example.com  
+
+* Inventory Variable Registration 
+Adding variables to the inventory file is generally not the correct solution. If you find that you are adding variables to an inventory file, think about whether this information really should be in the inventory. Is it a default value? Is it something related to a specific class of servers or a specific application? Chances are that there’s a better place for it to live. 
+
+* Inventory Groups
+Being able to group these servers together and target them as a single entity is important. Ansible supports this use case through the use of inventory groups. Square brackets are used as section markers in the INI format, so the group name is set to whatever appears in the square brackets.
+	[web]
+	host1.example.com
+	host2.example.com
+	[database]
+	db.example.com
+
+We could say web or database to instruct Ansible to run only on that group of servers by changing the hosts: value at the top of your YAML file, as follows:
+	- hosts: web
+
+You can set variables for groups of hosts as well using a special header in your inventory file:
+	[web:vars]                                                               
+	apache_version=2.4
+	engage_flibbit=true
