@@ -1,41 +1,68 @@
+Virtual Box:
+	root/vagrant
+	vagrant/vagrant
+MySQL DB:
+	root/482e3314a5df36
+	wordpress/bananas
+WordPress protal:
+	admin/password 
+
+
 ##################################################################################################
 CREATING YOUR ENVIRONMENT
 ##################################################################################################
 * create a file in that directory named Vagrantfile:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	$ mkdir ansible-book && cd ansible-book
 	$ vagrant init ubuntu/trusty64
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Once that file has been created, you can start your virtual machine by running vagrant up.
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	$ vagrant up
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * check this by running vagrant status:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	$ vagrant status
 	Current machine states:
 	default                   running (virtualbox)
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * You can also log in to the virtual machine by running the command vagrant ssh. 
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	$ vagrant ssh
 	$ vagrant@vagrant-ubuntu-trusty-64:∼$ cat /etc/issue
 		Ubuntu 14.04.3 LTS \n \l 
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Congratulations! You’ve just created and started a virtual machine with Vagrant. Now that you’ve done this, you’ll be able to follow along with me throughout the rest of the book. As you don’t need this virtual machine quite yet, let’s destroy it by running vagrant destroy:
-	 $ vagrant destroy
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	$ vagrant destroy
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Open the Vagrantfile and tells Vagrant that it needs to create a virtual machine with 1024mb of memory.:
-		config.vm.provider "virtualbox" do |vb|
- 			vb.memory = "1024"
-		end
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	config.vm.provider "virtualbox" do |vb|
+ 		vb.memory = "1024"
+	end
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-*  Tell Vagrant that we want to run Ansible on this virtual machine by adding some instructions to the Vagrantfile:
-		config.vm.provision "ansible" do |ansible|
-    		ansible.playbook = "provisioning/playbook.yml"
-		end
-	This tells Vagrant to use Ansible to run the playbook named playbook.yml inside a folder named provisioning in the current directory.
-	(If you do not have Ansible installed on your machine (for example, because you’re on Windows), you need to use the following configuration:
-		config.vm.provision "ansible_local" do |ansible|
-    		ansible.playbook = "provisioning/playbook.yml"
-		end
-	The only difference between these two pieces of configuration is that one uses ansible and the other uses ansible_local. Using ansible will run Ansible (which we installed earlier) on your local machine, while using ansible_local will log in to the virtual machine and run it there instead. You don’t need to worry about installing it on the virtual machine, as Vagrant will take care of the installation and configuration for you.)
+* Tell Vagrant that we want to run Ansible on this virtual machine by adding some instructions to the Vagrantfile:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	config.vm.provision "ansible" do |ansible|
+    	ansible.playbook = "provisioning/playbook.yml"
+	end
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  This tells Vagrant to use Ansible to run the playbook named playbook.yml inside a folder named provisioning in the current directory. (If you do not have Ansible installed on your machine (for example, because you’re on Windows), you need to use the following configuration:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	config.vm.provision "ansible_local" do |ansible|
+    	ansible.playbook = "provisioning/playbook.yml"
+	end
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  The only difference between these two pieces of configuration is that one uses ansible and the other uses ansible_local. Using ansible will run Ansible (which we installed earlier) on your local machine, while using ansible_local will log in to the virtual machine and run it there instead. You don’t need to worry about installing it on the virtual machine, as Vagrant will take care of the installation and configuration for you.)
 
 * Create a folder named provisioning and a file inside it named playbook.yml.
 
@@ -46,42 +73,48 @@ Playbooks more closely resemble a model of a system than they do a programming l
 
 * YAML files start by defining any additional metadata that needs to be attached to a file (commonly known as front matter). 
 
-* Once you’ve closed your front matter, the first thing that you need to do is to tell Ansible where this playbook should run. You do this by specifying a host group on which to run. 
-	Now we’ll tell Ansible to run on all available hosts by adding - hosts
-		---
-		- hosts: all
+* Once you’ve closed your front matter, the first thing that you need to do is to tell Ansible where this playbook should run. You do this by specifying a host group on which to run.  Now we’ll tell Ansible to run on all available hosts by adding - hosts
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	---
+	- hosts: all
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Now that Ansible knows where to run, you can tell it what you want it to run. This is done by adding a section named tasks. Inside tasks, you are going to tell Ansible to just ping your machines to make sure that you can connect to them:
 (Thankfully, Ansible lets you add a name to each task to explain its purpose. Let’s do that to our ping action now:)
-		---
-		- hosts: all
-		  tasks:
-		   	- name: Make sure that we can connect to the machine
-		  	  ping:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	---
+	- hosts: all
+	  tasks:
+	   	- name: Make sure that we can connect to the machine
+	  	  ping:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-* Together, we’re going to be installing some open-source software that’s developed in PHP . Let’s add PHP by adding another entry to the playbook.yml file so that it looks like the following:
-(By default, Ansible will log in as the Vagrant user, which does not have permission to install packages. This is where the become option (that controls which user commands are run as) comes in handy. become can be added in two different places in your playbook. It can be added next to the task that requires more permissions, or it can be added on a per-playbook level, meaning that every command will be run with administrator permissions)
-		---
-		- hosts: all
-		  become: true
- 		  tasks:
-   		    - name: Make sure that we can connect to the machine
-      		  ping:
-    	 	- name: Install PHP
-     		  apt: name=php5-cli state=present update_cache=yes
+* Together, we’re going to be installing some open-source software that’s developed in PHP . Let’s add PHP by adding another entry to the playbook.yml file so that it looks like the following: (By default, Ansible will log in as the Vagrant user, which does not have permission to install packages. This is where the become option (that controls which user commands are run as) comes in handy. become can be added in two different places in your playbook. It can be added next to the task that requires more permissions, or it can be added on a per-playbook level, meaning that every command will be run with administrator permissions)
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	---
+	- hosts: all
+	  become: true
+ 	  tasks:
+   	    - name: Make sure that we can connect to the machine
+      	  ping:
+     	- name: Install PHP
+     	  apt: name=php5-cli state=present update_cache=yes
+    ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * You can add more steps to install nginx and mySQL by adding more calls to the apt module saying that you expect nginx and mysql-server-5.6 to be present.
 (A brief explanation of how this works is that you provide a list of items inside a key named with_items. Ansible will then call your task once for each item in the list. The value of each item is available via the special {{item}} notation. Once you’ve made these changes, your playbook should look like this)
-		---
-		- hosts: all
-		  become: true
-		  tasks:
-		    - name: Install required packages
-		      apt: name={{item}} state=present update_cache=yes
-		      with_items:
-        		- php5-cli
-        		- nginx
-        		- mysql-server-5.6
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
+	---
+	- hosts: all
+	  become: true
+	  tasks:
+	    - name: Install required packages
+	      apt: name={{item}} state=present update_cache=yes
+	      with_items:
+			- php5-cli
+			- nginx
+			- mysql-server-5.6
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 *  In Ansible terms, a playbook is considered idempotent if you can run it multiple times and after the first run the machine is in a certain state, which doesn’t change if you run the same playbook again at any point in time after that.
 
@@ -91,51 +124,415 @@ Inventory File
 The tool that you’re using needs to know which machines it should run on. This is known as an inventory. As there is no central server in Ansible, we will need another way to get all of this information to the code that runs to enforce the desired state. This is where the inventory file comes in.
 
 * Maintain a different inventory file for each project that you have and pass it to both the ansible and ansible-playbook commands using the –i option:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	$ ansible all –i /path/to/inventory –m ping
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * The inventory file in Ansible can be either an INI file or a JSON file. They can be as simple as a list of host names to run against. The following is an example of a simple inventory file:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	host1.example.com
 	host2.example.com
 	host3.example.com
 	192.168.9.29
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * (Optional) Running without Vagrant: 
 	** uncomment the line in the vagrant file: 
 		config.vm.network "private_network", ip: "192.168.33.10"
 	** create a file and add content:
+		++++++++++++++++++++++++++++++++++++++++++++++++++++
 		192.168.33.10 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/default/virtualbox/private_key
+		++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	** Restrart Vagrant:
+		++++++++++++++++++++++++++++++++++++++++++++++++++++
 		vagrant halt/vagrant up
+		++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	** Run ansible playbook with inventory file:
-		ansible-playbook –i inventory provisioning/playbook.yml   
+		++++++++++++++++++++++++++++++++++++++++++++++++++++
+		ansible-playbook –i inventory provisioning/playbook.yml  
+		++++++++++++++++++++++++++++++++++++++++++++++++++++ 
 
 * Configuration Options in the Inventory: Here’s an example inventory file that uses some of these options:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	alpha.example.com ansible_user=bob ansible_port=50022
 	bravo.example.com ansible_user=mary ansible_ssh_private_key_file=/path/to/mary.key
 	frontend.example.com ansible_port=50022
 	yellow.example.com ansible_host=192.168.33.10
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Privilege-escalation options can be set in the inventory file, but they won’t actually be used unless you set become: true in your playbooks. By default, become will elevate you to the root level. Given the following inventory file, alpha and bravo will both use the automation user when become: true is set in a playbook. frontend will use the ansible user, and yellow will use root, which is the default:
+	
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 	alpha.example.com ansible_become_user=automation
 	bravo.example.com ansible_become_user=automation
 	frontend.example.com ansible_become_user=ansible
-	yellow.example.com  
+	yellow.example.com
+	++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 * Inventory Variable Registration 
-Adding variables to the inventory file is generally not the correct solution. If you find that you are adding variables to an inventory file, think about whether this information really should be in the inventory. Is it a default value? Is it something related to a specific class of servers or a specific application? Chances are that there’s a better place for it to live. 
+  Adding variables to the inventory file is generally not the correct solution. If you find that you are adding variables to an inventory file, think about whether this information really should be in the inventory. Is it a default value? Is it something related to a specific class of servers or a specific application? Chances are that there’s a better place for it to live. 
 
 * Inventory Groups
-Being able to group these servers together and target them as a single entity is important. Ansible supports this use case through the use of inventory groups. Square brackets are used as section markers in the INI format, so the group name is set to whatever appears in the square brackets.
-	[web]
-	host1.example.com
-	host2.example.com
-	[database]
-	db.example.com
+  Being able to group these servers together and target them as a single entity is important. Ansible supports this use case through the use of inventory groups. Square brackets are used as section markers in the INI format, so the group name is set to whatever appears in the square brackets.
+		++++++++++++++++++
+		[web]
+		host1.example.com
+		host2.example.com
+		[database]
+		db.example.com
+		++++++++++++++++++
 
-We could say web or database to instruct Ansible to run only on that group of servers by changing the hosts: value at the top of your YAML file, as follows:
-	- hosts: web
+	We could say web or database to instruct Ansible to run only on that group of servers by changing the hosts: value at the top of your YAML file, as follows:
+		+++++++++++++
+		- hosts: web
+		+++++++++++++
 
 You can set variables for groups of hosts as well using a special header in your inventory file:
+	
+	++++++++++++++++++++
 	[web:vars]                                                               
 	apache_version=2.4
 	engage_flibbit=true
+	++++++++++++++++++++
+
+##################################################################################################
+Create WordPress Node
+##################################################################################################
+* Create an vagrant working folder for the WordPress:
+	++++++++++++++++++++++++++++++
+	mkdir ansible-wordpress
+	cd ansible-wordpress
+	vagrant init ubuntu/trusty64
+	+++++++++++++++++++++++++++++++
+
+* Create vagrant file for the WordPress node:
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	Vagrant.configure(2) do |config|
+ 		config.vm.box = "ubuntu/trusty64"
+ 		config.vm.network "private_network", ip: "192.168.33.20"
+ 		config.vm.provider "virtualbox" do |vb|
+ 		  vb.memory = "1024"
+ 		end
+ 		config.vm.provision "ansible" do |ansible|
+ 		  ansible.playbook = "provisioning/playbook.yml"
+ 		end
+	end
+	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+* Create ansible working folder and playbook for the WordPress	
+	+++++++++++++++++++++++++++++++++
+	mkdir provisioning
+	touch provisioning/playbook.yml
+	+++++++++++++++++++++++++++++++++
+
+* Edit the playbook for the WordPress:
+This playbook installs php and mysql server, removes the anonyouse user from MySQL database and reset the My-SQL database root user's password
+
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	---
+	- hosts: all
+	  become: true
+	  tasks:
+	    - name: Make sure we can connect
+	      ping:
+	    # PHP
+	    - name: Add the ondrej PHP PPA
+	      apt_repository: repo='ppa:ondrej/php'
+	    
+	    - name: Update the apt cache
+	      apt: update_cache=yes cache_valid_time=3600
+	
+	    - name: Install PHP
+	      apt: name={{item}} state=installed
+	      with_items:
+	        - php7.2
+	        - php7.2-fpm
+	        - php7.2-mysql
+	        - php7.2-xml
+
+	    - name: Remove Apache2
+	      apt: name=apache2 state=removed
+	    
+	   		# MySQL
+	   		- name: Install MySQL
+	   		  apt: name={{item}} state=installed
+	   		  with_items:
+	   		    - mysql-server-5.6
+	   		    - python-mysqldb
+	
+	  - name: Generate new root password
+	    command: openssl rand -hex 7 creates=/root/.my.cnf 
+	    register: mysql_new_root_pass
+	  
+	  - name: Remove anonymous users
+	    mysql_user: name="" state=absent
+	    when: mysql_new_root_pass.changed 
+	
+	  - name: Remove test database
+	    mysql_db: name=test state=absent
+	    when: mysql_new_root_pass.changed 
+	
+	  - name: Output new root password
+	    debug: msg="New root password is {{mysql_new_root_pass.stdout}}"
+	
+	  - name: Update root password
+	    mysql_user: name=root host={{item}} password={{mysql_new_root_pass.stdout}}
+	    with_items:
+	      - "{{ ansible_hostname }}"
+	      - 127.0.0.1
+	       - ::1
+	       - localhost
+	     when: mysql_new_root_pass.changed 
+
+	   - name: Create my.cnf
+	     template: src=templates/mysql/my.cnf dest=/root/.my.cnf
+	     when: mysql_new_root_pass.changed 
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	** There are a few different options for writing files using Ansible (such as the copy and template modules). As this is a multi-line file that contains variables, you’ll need to use Ansible’s template module to populate its content. First, you need to create a folder to hold your template and create the file that you are going to copy over. Run these commands from your terminal (in the same directory as your vagrantfile) to create the required folders and files:
+	++++++++++++++++++++++++++++++++++++++++++
+	mkdir -p provisioning/templates/mysql
+	touch provisioning/templates/mysql/my.cnf
+	++++++++++++++++++++++++++++++++++++++++++
+
+	Once you’ve created my.cnf, edit it and make sure that it has the following contents :
+	++++++++++++++++++++++++++++++++++++++++++
+	[client]
+	user=root
+	password={{ mysql_new_root_pass.stdout }}
+	++++++++++++++++++++++++++++++++++++++++++
+
+	You also need to tell Ansible to copy this template into your environment; this is done using the template module. Add the following task to your playbook:
+	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	- name: Create my.cnf
+  	  template: src=templates/mysql/my.cnf dest=/root/.my.cnf
+  	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  	This file will contain the username and password for the root MySQL user. This is required so as to allow Ansible to make changes without user intervention.
+
+  	** Ansible has a special creates option that determines if a file exists before executing a module:
+  	+++++++++++++++++++++++++++++++++++++++++++++++++++++
+  	- name: Generate new root password
+  	  command: openssl rand -hex 7 creates=/root/.my.cnf
+  	  register: mysql_new_root_pass
+  	+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  	If the file /root/.my.cnf does not exist, mysql_new_root_pass.changed will be true. If it does exist, it will be set to false. You can use that in the rest of your playbook to skip any steps that need not be run. 
+
+##################################################################################################
+Install Nginx
+##################################################################################################
+* Add the ngnix in the playbook:
+	+++++++++++++++++++++++++++++++++++++++++++++
+	# nginx
+	- name: Install nginx
+  	  apt: name=nginx state=installed
+	- name: Start nginx
+ 	  service: name=nginx state=running
+  	+++++++++++++++++++++++++++++++++++++++++++++
+
+ * Create Nginx config
+ 	** Create the config file in local:
+ 	+++++++++++++++++++++++++++++++++++++++++++++
+ 	mkdir -p provisioning/templates/nginx
+	touch provisioning/templates/nginx/default
+	+++++++++++++++++++++++++++++++++++++++++++++
+
+	** Create a task in the playbook to copy the config file:
+		+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		- name: Create nginx config
+  		  template: src=templates/nginx/default dest=/etc/nginx/sites-available/default
+ 		++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	** Edit nginx rules in templates/nginx/default:
+		++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		upstream php {
+		        server unix:/run/php/php7.0-fpm.sock;
+		}
+		
+		server {
+		        server_name book.example.com;
+		        root /var/www/book.example.com;
+		        ## This should be in your http block and if it is, it's not needed here.
+		        index index.php;
+		
+		        location = /favicon.ico {
+		                log_not_found off;
+		                access_log off;
+		        }
+		
+		        location = /robots.txt {
+		                allow all;
+		                log_not_found off;
+		                access_log off;
+		        }
+		
+		
+		        location ~ /\. {
+		                deny all;
+		        }
+		
+		        location / {
+		                # This is cool because no php is touched for static content.
+		                # include the "?$args" part so non-default permalinks doesn't break when using query string
+		                try_files $uri $uri/ /index.php?$args;
+		        }
+		
+		        location ~ \.php$ {
+		                fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+		                if (!-f $document_root$fastcgi_script_name) {
+		                        return 404;
+		                }
+		                include fastcgi_params;
+		                fastcgi_index index.php;
+		                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		                fastcgi_pass php;
+		        }
+		
+		        location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+		                expires max;
+		                log_not_found off;
+		        }
+		}
+
+		++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+###################################################################################
+Install Nginx
+###################################################################################
+* Handlers are just like tasks, but they can be triggered from anywhere. Delete the Restart nginx task if you added it and add the following to the bottom of your playbook. handlers: should be at the same level and indentation as tasks:
+	+++++++++++++++++++++++++++++++++++++++++++
+	handlers:
+    	- name: restart nginx
+      	  service: name=nginx state=restarted
+    +++++++++++++++++++++++++++++++++++++++++++
+
+	This code will use the service module to restart nginx any time the handler is triggered. Speaking of which, you can trigger it whenever your config file changes by updating the task to look like the following:
+	+++++++++++++++++++++++++++++++++++++++++++
+	- name: Create nginx config
+  	  template: src=templates/nginx/default dest=/etc/nginx/sites-available/default
+  	  notify: restart nginx
+  	+++++++++++++++++++++++++++++++++++++++++++
+
+* Add book.example.com in /etc/hosts
+  ++++++++++++++++++++++++++++++
+  192.168.33.20 book.example.com
+  ++++++++++++++++++++++++++++++
+
+###################################################################################
+Download PHP
+###################################################################################
+* Add a task to download the latest WordPress
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	# WordPress
+    - name: Get WordPress checksum
+      uri: url=https://wordpress.org/latest.zip.sha1 return_content=true
+      register: wp_checksum
+
+    - name: Download WordPress
+      get_url:
+      url: https://wordpress.org/latest.zip
+      dest: /tmp/wordpress.zip
+      checksum: "sha1:{{wp_checksum.content}}"
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	At this point, the arguments that you’re passing to Ansible are getting longer and longer and have potentially started to wrap across multiple lines. Ansible supports a second input format for module arguments that is designed for longer arguments. Take a look at the preceding task, for example:
+		++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		- name: Download WordPress
+		  get_url: url=https://wordpress.org/latest.zip dest=/tmp/wordpress.zip checksum="sha1:{{wp_checksum.content}}"
+		++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	This can be written with each argument on its own line, and it will perform the same action:
+		+++++++++++++++++++++++++++++++++++++++++++++
+		- name: Download WordPress
+  		  get_url:
+    		url: https://wordpress.org/latest.zip
+    		dest: /tmp/wordpress.zip
+    		checksum: "sha1:{{wp_checksum.content}}"
+  		+++++++++++++++++++++++++++++++++++++++++++++
+
+	The only differences of note are that each argument is on its own line and the equals sign has been replaced with a colon. You can use whichever format you prefer going forward, as they are functionally equivalent.
+
+###################################################################################
+Configure WordPress Install
+###################################################################################
+* Add a task to install WordPress
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	- name: Unzip WordPress
+  	  unarchive: src=/tmp/wordpress.zip dest=/tmp copy=no creates=/tmp/wordpress/wp-settings.php
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+* Copy the PHP to the given working folder
+	+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    - name: Create project folder
+      file: dest=/var/www/book.example.com state=directory
+
+    - name: Copy WordPress files
+      command: cp -a /tmp/wordpress/. /var/www/book.example.com creates=/var/www/book.example.com/wp-settings.php
+    +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+ * Create PHP DB and user
+ 	Create a database called wordpress and a user called wordpress with the password bananas. The new user will have all of the privileges on the wordpress database, but nothing else. After running Ansible to create the database and user, go back to your web browser and continue the installation process .
+ 	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 	- name: Create WordPress MySQL database
+  	  mysql_db: name=wordpress state=present
+	- name: Create WordPress MySQL user
+  	  mysql_user: name=wordpress host=localhost password=bananas priv=wordpress.*:ALL
+ 	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+ * Run WordPress Installation
+   Visit book.example.com in the browser and run the WordPress installation using the username and password created above, this will fail due to missing permission to write the wp-config.php. Copy the content of the wp-config.php file shown on the page, then create the file via ansible template
+
+ * Create a wp-config.php for WordPress
+   Create provisioning/templates/wordpress/wp-config.php using the content copied in the previous step. Once that’s done, add a task to copy this file into the correct place:
+   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   - name: Create wp-config
+   template: src=templates/wordpress/wp-config.php dest=/var/www/book.example.com/wp-config.php
+   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+###################################################################################
+Backup DB
+###################################################################################
+* Create DB dump file:
+  Log in to the environment with vagrant ssh and run the following commands to create a backup SQL file to be used by your playbook:
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  sudo su -
+  mysqldump wordpress > /vagrant/provisioning/files/wp-database.sql
+  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+ * Create a dump file in the ansible files folder using the content above
+
+ * Create a taks to make sure that you don’t overwrite databases that already exist:
+   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+   - name: Does the database exist?
+    command: mysql -u root wordpress -e "SELECT ID FROM wordpress.wp_users LIMIT 1;"
+    register: db_exist
+    ignore_errors: true
+    changed_when: false
+   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+   changed_when is a field that controls whether Ansible thinks that a task performed an action that made a change or not. If the expression provided evaluates to true, Ansible will record that a change was made and trigger any handlers that need to run. If it evaluates to false, Ansible will record that no change was made, and no handlers will be triggered. In the case above, Ansible checks if the expression evaluates to false to decide if a task changed anything. As you never want the command that checks if the database exists to return “changed,” you can specify changed_when: false to make it always return as OK.
+
+* Restore DB if the database not exist:
+  This tries to select the first user from your WordPress database. This will fail if the database doesn’t exist, which is your trigger to restore the database. You store the return value in db_exist for use in later tasks. If you need to import the database, you’ll need to copy your database to the remote environment before you import it, so you will need two tasks to perform the import :
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  - name: Copy WordPress DB
+    copy: src=files/wp-database.sql dest=/tmp/wp-database.sql
+    when: db_exist.rc > 0
+  - name: Import WordPress DB
+    mysql_db: target=/tmp/wp-database.sql state=import name=wordpress
+    when: db_exist.rc > 0
+  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+###################################################################################
+Ansible Roles
+###################################################################################
+In this chapter, we’re going to refactor this playbook so that it is split up into logical sections . We’ll have one role that installs PHP, one for nginx, another for MySQL, and, finally, one for WordPress. Not only will this make the playbooks easier to follow, but it will also make them reusable.
+
+ A playbook is a standalone file that Ansible can run that contains all of the information required to set a machine’s state to what you expect. This means that a playbook can contain variables, tasks, handlers, roles, and even other playbooks, all in the same file. 
+
+ You can think of a role as a playbook that is split up into multiple different files. Instead of having a single file that contains everything that you need, there’s one file for variables, one for tasks, and another for handlers. You can’t run a role on its own, though; you need to include it inside a playbook along with the information about which hosts to run on.
+
+Roles are the mechanism that you use to package up tasks, handlers, and everything else that you need into reusable components that you can glue together by including them in a playbook.
