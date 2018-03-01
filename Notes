@@ -426,7 +426,7 @@ Install WordPress
     ******************************
   
   ###################################################################################
-  Download WordPress
+  Download Latest WordPress Automatically
   ###################################################################################
   * Add a task to download the latest WordPress
   	*********************************************************************
@@ -459,6 +459,16 @@ Install WordPress
   
   	The only differences of note are that each argument is on its own line and the equals sign has been  replaced with a 	colon. You can use whichever format you prefer going forward, as they are  functionally equivalent.
   
+  ###################################################################################
+  Download WordPress Manually
+  ###################################################################################
+  * Download the wordpress-4.9.4.zip and put it in the provisioning/files/
+  * Add a task to copy the WordPress to a give path
+  	*********************************************************************
+    - name: Copy wordpress.zip into tmp
+      copy: src=files/wordpress-4.9.4.zip dest=/tmp/wordpress.zip
+  	*********************************************************************
+
   ###################################################################################
   Configure and Run WordPress Installation
   ###################################################################################
@@ -583,7 +593,7 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
 	  ***********************************
   * Include the roles:
     Update playbook.yml so that they are included. Add your list of roles before the tasks section.
-      ********************************************************* 
+      ***********************
       ---
 	  - hosts: all
   	    become: true
@@ -593,9 +603,9 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
       	- mheap.mysql
       	- mheap.wordpress
   	    tasks:
-      ********************************************************* 
+      ***********************
 
-  * Populate PHP role
+  * PHP role
     Take the following four tasks that are related to installing PHP and move them into roles/mheap.php/tasks/main.yml. After doing this, roles/mheap.php/tasks/main.yml will contain the following four tasks:
       ********************************************************* 
 	  ---
@@ -613,41 +623,103 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
 	  - name: Remove apache2
 	    apt: name=apache2 state=removed
       *********************************************************
-
-	* Run playbook:
-	  This time you’ll notice that the name of the task is preceded by the name of the role. This makes it really easy to work out where tasks are being included from when Ansible runs.
-	    *********************************************************
-	    TASK [jinge.php : Add the ondrej PHP PPA] 
-		ok: [default]
-
-		TASK [jinge.php : Update the apt cache]
-		changed: [default]
-
-		TASK [jinge.php : Install PHP] 
-		ok: [default] => (item=['php7.2', 'php7.2-fpm', 'php7.2-mysql', 'php7.2-xml'])
-
-		TASK [jinge.php : Remove Apache2]
-		ok: [default]
-	    *********************************************************
-       
-       By moving the PHP part of the installation to a separate role, you just made your PHP role reusable. If you need PHP on a machine in any playbook that you use in the future, you can add jinge.php to your list of roles to run and it will install all of the relevant packages.
   
-  * Populate MySQL role
+  * MySQL role
     ** Move all of the MySQL-related tasks out of playbook.yml and into the role’s task file.
     ** Move provisioning/templates/mysql/my.cnf to roles/jinge.mysql/templates
     ** Now that your template is part of a role. Ansible automatically looks in a folder named templates when using the template module in a role, so you need to change the src parameter for this call to the template module to my.cnf:
-      *********************************************************
+      *******************************************
       - name: Create my.cnf
   		template: src=my.cnf dest=/root/.my.cnf
  		when: mysql_new_root_pass.changed
- 	  *********************************************************
+ 	  *******************************************
 
-    * Populate Nginx role
+  * Nginx role
     ** Move all of the Nginx-related tasks out of playbook.yml and into the role’s task file.
     ** Move provisioning/templates/nginx/default to roles/jinge.nginx/templates
     ** Now that your template is part of a role. Ansible automatically looks in a folder named templates when using the template module in a role, so you need to change the src parameter for this call to the template module to default:
-      *********************************************************
+      *************************************************************
 	  - name: Create nginx config
       template: src=default dest=/etc/nginx/sites-available/default
       notify: restart nginx
- 	  *********************************************************
+ 	  *************************************************************
+
+ 	** Move the ngnix handler from playbook.yml to this new handlers file. You don’t need the handlers heading, just the handler definition itself. Once you’ve moved it, handlers/main.yml will look like the following:
+ 	  ***************************************
+	  ---
+	  # handlers file for mheap.nginx
+	  - name: restart nginx
+  	    service: name=nginx state=restarted
+  	  ***************************************
+
+  * WordPress role
+    ** move all of the WordPress-related tasks out of playbook.yml and into the role’s task file.
+    ** move provisioning/templates/wordpress/wp-config.php to roles/jinge.wordpress/templates
+    ** update your template task src parameter to the new location of wp-config.php
+      ***************************************************************************
+      - name: Create wp-config
+  		template: src=wp-config.php dest=/var/www/book.example.com/wp-config.php
+ 	  ***************************************************************************
+
+    ** move provisioning/files/wp-database.sql to the roles/jinge.wordpress/files
+    ** update your copy tasks to remove the files/ section from the src parameter
+      ***************************************************************************
+      - name: Copy wordpress.zip into tmp
+  		copy: src=wordpress-4.0.4.zip dest=/tmp/wordpress.zip
+	  - name: Copy WordPress DB
+  		copy: src=wp-database.sql dest=/tmp/wp-database.sql
+  		when: db_exist.rc > 0
+ 	  ***************************************************************************
+
+  * Run playbook:
+    Your playbook will run and install all of the dependencies required to configure your WordPress application. This time you’ll notice that the name of the task is preceded by the name of the role. This makes it really easy to work out where tasks are being included from when Ansible runs.
+	  *****************************************************************************
+	  TASK [jinge.php : Add the ondrej PHP PPA] 
+	  ok: [default]
+
+	  TASK [jinge.php : Update the apt cache]
+	  changed: [default]
+
+	  TASK [jinge.php : Install PHP] 
+	  ok: [default] => (item=['php7.2', 'php7.2-fpm', 'php7.2-mysql', 'php7.2-xml'])
+
+	  TASK [jinge.php : Remove Apache2]
+	  ok: [default]
+	  *****************************************************************************
+       
+    By moving the tasks a separate role, you just made your roles reusable. If you need PHP on a machine in any playbook that you use in the future, you can add jinge.php to your list of roles to run and it will install all of the relevant packages.
+
+  #####################################
+  ROLE DEPENDENCIES
+  #####################################
+  What happens when someone who doesn’t understand it fully tries to use it and omits a dependency? You can use "meta/main.yml" to specify a role’s dependencies and have Ansible include them for you automatically.
+  * Edit the jinge.wordpress/meta/main.yml and add the role dependencies:
+    ******************
+    dependencies:
+      - jinge.common
+      - jinge.php
+      - jinge.mysql
+      - jinge.nginx
+    ******************
+
+  * Next, edit playbook.yml so that only jinge.wordpress is in your list of roles. So, the playbook looks like below:
+    ***********************
+    ---
+    - hosts: all
+    become: true
+    roles:
+      - jinge.wordpress
+    **********************
+
+  ##############
+  WRAPPER ROLE
+  ##############
+  If we have a variable "my_name: World" in a role and wanted to change the name used, we could set a variable in your playbook that overrides it. However, if you always want it to say “Hello Michael,” having to add your name to every playbook becomes a nuisance very quickly.
+  
+  The alternative is to wrap this role up in another role that contains only the variables that you want to set. To do this, you create a role named jigne.hello_jinge. It doesn’t contain any tasks; it just specifies jinge.hello as a dependency: 
+
+  In meta/main.yml :
+
+dependencies:
+  - role: jinge.hello
+    my_name: jinge

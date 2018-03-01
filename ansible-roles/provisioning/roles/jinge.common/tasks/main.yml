@@ -1,0 +1,4 @@
+---
+# tasks file for jinge.common
+- name: Make sure we can connect
+  ping:
