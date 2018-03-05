@@ -12,55 +12,55 @@ WordPress protal:
 CREATING YOUR ENVIRONMENT
 ##################################################################################################
 * create a file in that directory named Vagrantfile:
-	****************************************************
+	___________________________________________________
 	$ mkdir ansible-book && cd ansible-book
 	$ vagrant init ubuntu/trusty64
-	****************************************************
+	___________________________________________________
 
 * Once that file has been created, you can start your virtual machine by running vagrant up.
-	****************************************************
+	___________________________________________________
 	$ vagrant up
-	****************************************************
+	___________________________________________________
 
 * check this by running vagrant status:
-	****************************************************
+	___________________________________________________
 	$ vagrant status
 	Current machine states:
 	default                   running (virtualbox)
-	****************************************************
+	___________________________________________________
 
 * You can also log in to the virtual machine by running the command vagrant ssh. 
-	****************************************************
+	___________________________________________________
 	$ vagrant ssh
 	$ vagrant@vagrant-ubuntu-trusty-64:∼$ cat /etc/issue
 		Ubuntu 14.04.3 LTS \n \l 
-	****************************************************
+	___________________________________________________
 
 * Congratulations! You’ve just created and started a virtual machine with Vagrant. Now that you’ve done this, you’ll be able to follow along with me throughout the rest of the book. As you don’t need this virtual machine quite yet, let’s destroy it by running vagrant destroy:
-	****************************************************
+	___________________________________________________
 	$ vagrant destroy
-	****************************************************
+	___________________________________________________
 
 * Open the Vagrantfile and tells Vagrant that it needs to create a virtual machine with 1024mb of memory.:
-	****************************************************
+	___________________________________________________
 	config.vm.provider "virtualbox" do |vb|
  		vb.memory = "1024"
 	end
-	****************************************************
+	___________________________________________________
 
 * Tell Vagrant that we want to run Ansible on this virtual machine by adding some instructions to the Vagrantfile:
-	****************************************************
+	___________________________________________________
 	config.vm.provision "ansible" do |ansible|
     	ansible.playbook = "provisioning/playbook.yml"
 	end
-	****************************************************
+	___________________________________________________
 
   This tells Vagrant to use Ansible to run the playbook named playbook.yml inside a folder named provisioning in the current directory. (If you do not have Ansible installed on your machine (for example, because you’re on Windows), you need to use the following configuration:
-	****************************************************
+	___________________________________________________*
 	config.vm.provision "ansible_local" do |ansible|
     	ansible.playbook = "provisioning/playbook.yml"
 	end
-	****************************************************
+	___________________________________________________*
 
   The only difference between these two pieces of configuration is that one uses ansible and the other uses ansible_local. Using ansible will run Ansible (which we installed earlier) on your local machine, while using ansible_local will log in to the virtual machine and run it there instead. You don’t need to worry about installing it on the virtual machine, as Vagrant will take care of the installation and configuration for you.)
 
@@ -74,23 +74,23 @@ Playbooks more closely resemble a model of a system than they do a programming l
 * YAML files start by defining any additional metadata that needs to be attached to a file (commonly known as front matter). 
 
 * Once you’ve closed your front matter, the first thing that you need to do is to tell Ansible where this playbook should run. You do this by specifying a host group on which to run.  Now we’ll tell Ansible to run on all available hosts by adding - hosts
-	****************************************************
+	___________________________________________________
 	---
 	- hosts: all
-	****************************************************
+	___________________________________________________
 
 * Now that Ansible knows where to run, you can tell it what you want it to run. This is done by adding a section named tasks. Inside tasks, you are going to tell Ansible to just ping your machines to make sure that you can connect to them:
 (Thankfully, Ansible lets you add a name to each task to explain its purpose. Let’s do that to our ping action now:)
-	****************************************************
+	________________________________________________________
 	---
 	- hosts: all
 	  tasks:
 	   	- name: Make sure that we can connect to the machine
 	  	  ping:
-	****************************************************
+	________________________________________________________
 
 * Together, we’re going to be installing some open-source software that’s developed in PHP . Let’s add PHP by adding another entry to the playbook.yml file so that it looks like the following: (By default, Ansible will log in as the Vagrant user, which does not have permission to install packages. This is where the become option (that controls which user commands are run as) comes in handy. become can be added in two different places in your playbook. It can be added next to the task that requires more permissions, or it can be added on a per-playbook level, meaning that every command will be run with administrator permissions)
-	****************************************************
+	_________________________________________________________
 	---
 	- hosts: all
 	  become: true
@@ -99,11 +99,11 @@ Playbooks more closely resemble a model of a system than they do a programming l
       	  ping:
      	- name: Install PHP
      	  apt: name=php5-cli state=present update_cache=yes
-    ****************************************************
+    _________________________________________________________
 
 * You can add more steps to install nginx and mySQL by adding more calls to the apt module saying that you expect nginx and mysql-server-5.6 to be present.
 (A brief explanation of how this works is that you provide a list of items inside a key named with_items. Ansible will then call your task once for each item in the list. The value of each item is available via the special {{item}} notation. Once you’ve made these changes, your playbook should look like this)
-	****************************************************
+	_______________________________________________________
 	---
 	- hosts: all
 	  become: true
@@ -114,7 +114,7 @@ Playbooks more closely resemble a model of a system than they do a programming l
 			- php5-cli
 			- nginx
 			- mysql-server-5.6
-	****************************************************
+	_______________________________________________________
 
 *  In Ansible terms, a playbook is considered idempotent if you can run it multiple times and after the first run the machine is in a certain state, which doesn’t change if you run the same playbook again at any point in time after that.
 
@@ -124,78 +124,78 @@ Inventory File
 The tool that you’re using needs to know which machines it should run on. This is known as an inventory. As there is no central server in Ansible, we will need another way to get all of this information to the code that runs to enforce the desired state. This is where the inventory file comes in.
 
 * Maintain a different inventory file for each project that you have and pass it to both the ansible and ansible-playbook commands using the –i option:
-	****************************************************
+	___________________________________________________
 	$ ansible all –i /path/to/inventory –m ping
-	****************************************************
+	___________________________________________________
 
 * The inventory file in Ansible can be either an INI file or a JSON file. They can be as simple as a list of host names to run against. The following is an example of a simple inventory file:
-	****************************************************
+	____________________
 	host1.example.com
 	host2.example.com
 	host3.example.com
 	192.168.9.29
-	****************************************************
+	____________________
 
 * (Optional) Running without Vagrant: 
 	** uncomment the line in the vagrant file: 
 		config.vm.network "private_network", ip: "192.168.33.10"
 	** create a file and add content:
-		****************************************************
+		_________________________________________________________________________________________________________________
 		192.168.33.10 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/default/virtualbox/private_key
-		****************************************************
+		_________________________________________________________________________________________________________________
 
 	** Restrart Vagrant:
-		****************************************************
+		_________________________
 		vagrant halt/vagrant up
-		****************************************************
+		_________________________
 
 	** Run ansible playbook with inventory file:
-		****************************************************
+		_______________________________________________________
 		ansible-playbook –i inventory provisioning/playbook.yml  
-		**************************************************** 
+		_______________________________________________________
 
 * Configuration Options in the Inventory: Here’s an example inventory file that uses some of these options:
-	****************************************************
+	____________________________________________________________________________________
 	alpha.example.com ansible_user=bob ansible_port=50022
 	bravo.example.com ansible_user=mary ansible_ssh_private_key_file=/path/to/mary.key
 	frontend.example.com ansible_port=50022
 	yellow.example.com ansible_host=192.168.33.10
-	****************************************************
+	____________________________________________________________________________________
 
 * Privilege-escalation options can be set in the inventory file, but they won’t actually be used unless you set become: true in your playbooks. By default, become will elevate you to the root level. Given the following inventory file, alpha and bravo will both use the automation user when become: true is set in a playbook. frontend will use the ansible user, and yellow will use root, which is the default:
 	
-	****************************************************
+	________________________________________________
 	alpha.example.com ansible_become_user=automation
 	bravo.example.com ansible_become_user=automation
 	frontend.example.com ansible_become_user=ansible
 	yellow.example.com
-	****************************************************
+	________________________________________________
 
 * Inventory Variable Registration 
   Adding variables to the inventory file is generally not the correct solution. If you find that you are adding variables to an inventory file, think about whether this information really should be in the inventory. Is it a default value? Is it something related to a specific class of servers or a specific application? Chances are that there’s a better place for it to live. 
 
 * Inventory Groups
   Being able to group these servers together and target them as a single entity is important. Ansible supports this use case through the use of inventory groups. Square brackets are used as section markers in the INI format, so the group name is set to whatever appears in the square brackets.
-		******************
+		__________________
 		[web]
 		host1.example.com
 		host2.example.com
 		[database]
 		db.example.com
-		******************
+		__________________
 
 	We could say web or database to instruct Ansible to run only on that group of servers by changing the hosts: value at the top of your YAML file, as follows:
-		*************
+		____________
 		- hosts: web
-		*************
+		____________
 
 You can set variables for groups of hosts as well using a special header in your inventory file:
 	
-	********************
+	_____________________
 	[web:vars]                                                               
 	apache_version=2.4
 	engage_flibbit=true
-	********************
+	_____________________
 
 ##################################################################################################
 Install WordPress
@@ -204,14 +204,14 @@ Install WordPress
   Install PHP and MySQL
   ##################################################################################################
   * Create an vagrant working folder for the WordPress:
-  	******************************
+  	______________________________
   	mkdir ansible-wordpress
   	cd ansible-wordpress
   	vagrant init ubuntu/trusty64
-  	*******************************
+  	______________________________
   
   * Create vagrant file for the WordPress node:
-  	***********************************************************
+  	_____________________________________________________________
   	Vagrant.configure(2) do |config|
    		config.vm.box = "ubuntu/trusty64"
    		config.vm.network "private_network", ip: "192.168.33.20"
@@ -222,18 +222,18 @@ Install WordPress
    		  ansible.playbook = "provisioning/playbook.yml"
    		end
   	end
-  	************************************************************
+  	_____________________________________________________________
   
   * Create ansible working folder and playbook for the WordPress	
-  	*********************************
+  	_________________________________
   	mkdir provisioning
   	touch provisioning/playbook.yml
-  	*********************************
+  	_________________________________
   
   * Edit the playbook for the WordPress:
   This playbook installs php and mysql server, removes the anonyouse user from MySQL database and reset the  My-SQL database root user's password
   
-  	*************************************************************************************
+  	_____________________________________________________________________________________
   	---
   	- hosts: all
   	  become: true
@@ -292,35 +292,35 @@ Install WordPress
   	   - name: Create my.cnf
   	     template: src=templates/mysql/my.cnf dest=/root/.my.cnf
   	     when: mysql_new_root_pass.changed 
-  	*************************************************************************************
+  	_____________________________________________________________________________________
   
   	** There are a few different options for writing files using Ansible (such as the copy and template  modules). As this is 	a multi-line file that contains variables, you’ll need to use Ansible’s  template module to populate its content. First, 	you need to create a folder to hold your template  and create the file that you are going to copy over. Run these commands 	from your terminal (in the  same directory as your vagrantfile) to create the required folders and files:
-  	******************************************
+  	__________________________________________
   	mkdir -p provisioning/templates/mysql
   	touch provisioning/templates/mysql/my.cnf
-  	******************************************
+  	__________________________________________
   
   	Once you’ve created my.cnf, edit it and make sure that it has the following contents :
-  	******************************************
+  	__________________________________________
   	[client]
   	user=root
   	password={{ mysql_new_root_pass.stdout }}
-  	******************************************
+  	__________________________________________
   
   	You also need to tell Ansible to copy this template into your environment; this is done using the  template module. Add 	the following task to your playbook:
-  	**********************************************************
+  	______________________________________________________________
   	- name: Create my.cnf
-    	  template: src=templates/mysql/my.cnf dest=/root/.my.cnf
-    	**********************************************************
+      template: src=templates/mysql/my.cnf dest=/root/.my.cnf
+    ______________________________________________________________
   
     	This file will contain the username and password for the root MySQL user. This is required so as to  allow Ansible to make 	changes without user intervention.
   
     	** Ansible has a special creates option that determines if a file exists before executing a module:
-    	*****************************************************
+    	_____________________________________________________
     	- name: Generate new root password
     	  command: openssl rand -hex 7 creates=/root/.my.cnf
     	  register: mysql_new_root_pass
-    	*****************************************************
+    	_____________________________________________________
   
     	If the file /root/.my.cnf does not exist, mysql_new_root_pass.changed will be true. If it does exist,  it will be set to 	false. You can use that in the rest of your playbook to skip any steps that need  not be run. 
   
@@ -328,29 +328,29 @@ Install WordPress
   Install Nginx
   ##################################################################################################
   * Add the ngnix in the playbook:
-  	*********************************************
+  	_____________________________________________
   	# nginx
   	- name: Install nginx
     	  apt: name=nginx state=installed
   	- name: Start nginx
    	  service: name=nginx state=running
-    *********************************************
+    _____________________________________________
   
    * Create Nginx config
    	** Create the config file in local:
-   		*********************************************
+   		_____________________________________________
    		mkdir -p provisioning/templates/nginx
   		touch provisioning/templates/nginx/default
-  		*********************************************
+  		_____________________________________________
   
   	** Create a task in the playbook to copy the config file:
-  		*******************************************************************************
+  		___________________________________________________________________________________
   		- name: Create nginx config
     		  template: src=templates/nginx/default dest=/etc/nginx/sites-available/default
-   		********************************************************************************
+   		____________________________________________________________________________________
   
   	** Edit nginx rules in templates/nginx/default:
-  		********************************************************************************
+  		___________________________________________________________________________________________________________
   		upstream php {
   		        server unix:/run/php/php7.0-fpm.sock;
   		}
@@ -400,36 +400,36 @@ Install WordPress
   		        }
   		}
   
-  		********************************************************************************
+  		_______________________________________________________________________________________________________________
   
   ###################################################################################
   Restart Nginx
   ###################################################################################
   * Use Handler
     Handlers are just like tasks, but they can be triggered from anywhere. Delete the Restart nginx task if  you added it and 	add the following to the bottom of your playbook. handlers: should be at the same level  and indentation as tasks:
-  	*******************************************
+  	__________________________________________*
   	handlers:
       - name: restart nginx
         service: name=nginx state=restarted
-    *******************************************
+    __________________________________________*
   
   	This code will use the service module to restart nginx any time the handler is triggered. Speaking of  which, you can 	trigger it whenever your config file changes by updating the task to look like the  following:
-  	*******************************************
+  	__________________________________________*
   	- name: Create nginx config
       template: src=templates/nginx/default dest=/etc/nginx/sites-available/default
       notify: restart nginx
-    *******************************************
+    __________________________________________*
   
   * Add book.example.com in /etc/hosts
-    ******************************
+    ______________________________
     192.168.33.20 book.example.com
-    ******************************
+    ______________________________
   
   ###################################################################################
   Download Latest WordPress Automatically
   ###################################################################################
   * Add a task to download the latest WordPress
-  	*********************************************************************
+  	_____________________________________________________________________
   	# WordPress
      - name: Get WordPress checksum
        uri: url=https://wordpress.org/latest.zip.sha1 return_content=true
@@ -440,22 +440,22 @@ Install WordPress
        url: https://wordpress.org/latest.zip
        dest: /tmp/wordpress.zip
        checksum: "sha1:{{wp_checksum.content}}"
-  	*********************************************************************
+  	_____________________________________________________________________
   
   	At this point, the arguments that you’re passing to Ansible are getting longer and longer and have  potentially started to 	wrap across multiple lines. Ansible supports a second input format for module  arguments that is designed for longer 	arguments. Take a look at the preceding task, for example:
-  	***************************************************************************************************  ************
+  	_________________________________________________________________________________________________________________
   	- name: Download WordPress
       get_url: url=https://wordpress.org/latest.zip dest=/tmp/wordpress.zip  checksum="sha1:{{wp_checksum.content}}"
-  	  ***************************************************************************************************  ************
+  	  _______________________________________________________________________________________________________________
   
   	This can be written with each argument on its own line, and it will perform the same action:
-  	    *********************************************
+  	    _____________________________________________
   		- name: Download WordPress
     	  get_url:
       	  url: https://wordpress.org/latest.zip
       	  dest: /tmp/wordpress.zip
       	  checksum: "sha1:{{wp_checksum.content}}"
-    	*********************************************
+    	_____________________________________________
   
   	The only differences of note are that each argument is on its own line and the equals sign has been  replaced with a 	colon. You can use whichever format you prefer going forward, as they are  functionally equivalent.
   
@@ -464,81 +464,81 @@ Install WordPress
   ###################################################################################
   * Download the wordpress-4.9.4.zip and put it in the provisioning/files/
   * Add a task to copy the WordPress to a give path
-  	*********************************************************************
+  	_____________________________________________________________________
     - name: Copy wordpress.zip into tmp
       copy: src=files/wordpress-4.9.4.zip dest=/tmp/wordpress.zip
-  	*********************************************************************
+  	_____________________________________________________________________
 
   ###################################################################################
   Configure and Run WordPress Installation
   ###################################################################################
   * Add a task to install WordPress
-  	*********************************************************************************************
+  	_____________________________________________________________________________________________
   	- name: Unzip WordPress
     	  unarchive: src=/tmp/wordpress.zip dest=/tmp copy=no creates=/tmp/wordpress/wp-settings.php
-  	*********************************************************************************************
+  	_____________________________________________________________________________________________
   
   * Copy the PHP to the given working folder
-  	*******************************************************************************************************  *****
+  	________________________________________________________________________________________________________________
      - name: Create project folder
        file: dest=/var/www/book.example.com state=directory
   
      - name: Copy WordPress files
        command: cp -a /tmp/wordpress/. /var/www/book.example.com creates=/var/www/book.example.com  wp-settings.php
-     *******************************************************************************************************  *****
+     _______________________________________________________________________________________________________________
   
    * Create PHP DB and user
    	 Create a database called wordpress and a user called wordpress with the password bananas. The new user  will have all of 	the privileges on the wordpress database, but nothing else. After running Ansible  to create the database and user, go 	back to your web browser and continue the installation process .
-   	 **********************************************************************************
+   	 _________________________________________________________________________________
    	 - name: Create WordPress MySQL database
        mysql_db: name=wordpress state=present
   	 - name: Create WordPress MySQL user
        mysql_user: name=wordpress host=localhost password=bananas priv=wordpress.*:ALL
-   	 **********************************************************************************
+   	 _________________________________________________________________________________
   
    * Run WordPress Installation
      Visit book.example.com in the browser and run the WordPress installation using the username and password  created above, 	this will fail due to missing permission to write the wp-config.php. Copy the content of  the wp-config.php file shown on 	the page, then create the file via ansible template
   
    * Create a wp-config.php for WordPress
      Create provisioning/templates/wordpress/wp-config.php using the content copied in the previous step.  Once that’s done, add 	a task to copy this file into the correct place:
-     ***********************************************************************************************
+     _____________________________________________________________________________________________
      - name: Create wp-config
      template: src=templates/wordpress/wp-config.php dest=/var/www/book.example.com/wp-config.php
-     ***********************************************************************************************
+     _____________________________________________________________________________________________
   
   ###################################################################################
   Backup DB
   ###################################################################################
   * Create DB dump file:
     Log in to the environment with vagrant ssh and run the following commands to create a backup SQL file to  be used by your 	playbook:
-    *****************************************************************
+    _______________________________________________________________
     sudo su -
     mysqldump wordpress > /vagrant/provisioning/files/wp-database.sql
-    *****************************************************************
+    _______________________________________________________________
   
    * Create a dump file in the ansible files folder using the content above
   
    * Create a taks to make sure that you don’t overwrite databases that already exist:
-     ***********************************************************************************
+     _________________________________________________________________________________
      - name: Does the database exist?
       command: mysql -u root wordpress -e "SELECT ID FROM wordpress.wp_users LIMIT 1;"
       register: db_exist
       ignore_errors: true
       changed_when: false
-     ***********************************************************************************
+     _________________________________________________________________________________
   
      "changed_when" is a field that controls whether Ansible thinks that a task performed an action that made a  change or not. If 	the expression provided evaluates to true, Ansible will record that a change was  made and trigger any handlers that need 	to run. If it evaluates to false, Ansible will record that no  change was made, and no handlers will be triggered. In the 	case above, Ansible checks if the  expression evaluates to false to decide if a task changed anything. As you never want 	the command  that checks if the database exists to return “changed,” you can specify changed_when: false to make it  always 	return as OK.
   
   * Restore DB if the database not exist:
     This tries to select the first user from your WordPress database. This will fail if the database doesn’t  exist, which is 	your trigger to restore the database. You store the return value in db_exist for use in  later tasks. If you need to import 	the database, you’ll need to copy your database to the remote  environment before you import it, so you will need two tasks 	to perform the import :
-    ********************************************************************
+    __________________________________________________________________
     - name: Copy WordPress DB
       copy: src=files/wp-database.sql dest=/tmp/wp-database.sql
       when: db_exist.rc > 0
     - name: Import WordPress DB
       mysql_db: target=/tmp/wp-database.sql state=import name=wordpress
       when: db_exist.rc > 0
-    ********************************************************************
+    __________________________________________________________________
 
 ###################################################################################
 Ansible Roles
@@ -557,11 +557,11 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
   When creating roles, there is a naming convention that you should follow. Role names are generally in the  form <identifier>.<rolename>
   
   Run the following commands in the same folder as playbook.yml:
-    ******************************
+    ______________________________
     mkdir -p provisioning/roles
     cd provisioning/roles
     ansible-galaxy init jinge.php
-    *****************************  
+    ______________________________
     The init command will create a folder called mheap.php, which contains all of the possible files for a  Ansible role:  
        @ README: Every role should start with a README file. 
        @ defaults/main.yml: is a configuration file that you can use to define default values for variables usein  your role. You can also define variables in vars/main.yml that will override anything in defaultmain.yml,  as it has a much higher precedence. For example, variables located in vars/main.yml wiloverride variables  defined when gathering facts about a system, but variables located in defaultmain.yml will not
@@ -575,25 +575,25 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
     You may notice that each file inside a folder is called main.yml. This is the file name that Ansiblloads  when including a role. For example, to load the tasks for your PHP role, Ansible will attempt tload the  file located at roles/mheap.php/tasks/main.yml. You can work directly in this file, or you cacreate new  files alongside it in the folder and include those files in main.yml
      
     Now you have a clean separation between the tasks that install the core PHP packages and the tasks  thainstall any additional extensions. You need to tell Ansible that these files exist, which you do by  editing main.yml so that it looks like the following:
-      *****************************
+      ___________________________
        ---
        - include: 'php.yml'
        - include: 'extensions.yml'
-      *****************************  
+      ___________________________
 
   ###################################################################################
   SPLITTING UP YOUR WORDPRESS PLAYBOOK
   ###################################################################################
   * Create various roles:
     In your roles directory, and then run the following commands to generate some empty roles:
-  	  ***********************************
+  	  _________________________________
 	  ansible-galaxy init mheap.nginx
 	  ansible-galaxy init mheap.mysql
 	  ansible-galaxy init mheap.wordpress
-	  ***********************************
+	  _________________________________
   * Include the roles:
     Update playbook.yml so that they are included. Add your list of roles before the tasks section.
-      ***********************
+      _____________________
       ---
 	  - hosts: all
   	    become: true
@@ -603,11 +603,11 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
       	- mheap.mysql
       	- mheap.wordpress
   	    tasks:
-      ***********************
+      _____________________
 
   * PHP role
     Take the following four tasks that are related to installing PHP and move them into roles/mheap.php/tasks/main.yml. After doing this, roles/mheap.php/tasks/main.yml will contain the following four tasks:
-      ********************************************************* 
+      _________________________________________________________ 
 	  ---
 	  - name: Add the ondrej PHP PPA
 	    apt_repository: repo='ppa:ondrej/php'
@@ -622,58 +622,58 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
 	      - php7.2-xml
 	  - name: Remove apache2
 	    apt: name=apache2 state=removed
-      *********************************************************
+      _________________________________________________________
   
   * MySQL role
     ** Move all of the MySQL-related tasks out of playbook.yml and into the role’s task file.
     ** Move provisioning/templates/mysql/my.cnf to roles/jinge.mysql/templates
     ** Now that your template is part of a role. Ansible automatically looks in a folder named templates when using the template module in a role, so you need to change the src parameter for this call to the template module to my.cnf:
-      *******************************************
+      __________________________________________
       - name: Create my.cnf
   		template: src=my.cnf dest=/root/.my.cnf
  		when: mysql_new_root_pass.changed
- 	  *******************************************
+ 	  __________________________________________
 
   * Nginx role
     ** Move all of the Nginx-related tasks out of playbook.yml and into the role’s task file.
     ** Move provisioning/templates/nginx/default to roles/jinge.nginx/templates
     ** Now that your template is part of a role. Ansible automatically looks in a folder named templates when using the template module in a role, so you need to change the src parameter for this call to the template module to default:
-      *************************************************************
+      ____________________________________________________________
 	  - name: Create nginx config
       template: src=default dest=/etc/nginx/sites-available/default
       notify: restart nginx
- 	  *************************************************************
+ 	  ____________________________________________________________
 
  	** Move the ngnix handler from playbook.yml to this new handlers file. You don’t need the handlers heading, just the handler definition itself. Once you’ve moved it, handlers/main.yml will look like the following:
- 	  ***************************************
+ 	  _______________________________________
 	  ---
 	  # handlers file for mheap.nginx
 	  - name: restart nginx
   	    service: name=nginx state=restarted
-  	  ***************************************
+  	  _______________________________________
 
   * WordPress role
     ** move all of the WordPress-related tasks out of playbook.yml and into the role’s task file.
     ** move provisioning/templates/wordpress/wp-config.php to roles/jinge.wordpress/templates
     ** update your template task src parameter to the new location of wp-config.php
-      ***************************************************************************
+      ___________________________________________________________________________
       - name: Create wp-config
   		template: src=wp-config.php dest=/var/www/book.example.com/wp-config.php
- 	  ***************************************************************************
+ 	  ___________________________________________________________________________
 
     ** move provisioning/files/wp-database.sql to the roles/jinge.wordpress/files
     ** update your copy tasks to remove the files/ section from the src parameter
-      ***************************************************************************
+      ___________________________________________________________________________
       - name: Copy wordpress.zip into tmp
   		copy: src=wordpress-4.0.4.zip dest=/tmp/wordpress.zip
 	  - name: Copy WordPress DB
   		copy: src=wp-database.sql dest=/tmp/wp-database.sql
   		when: db_exist.rc > 0
- 	  ***************************************************************************
+ 	  ___________________________________________________________________________
 
   * Run playbook:
     Your playbook will run and install all of the dependencies required to configure your WordPress application. This time you’ll notice that the name of the task is preceded by the name of the role. This makes it really easy to work out where tasks are being included from when Ansible runs.
-	  *****************************************************************************
+	  ___________________________________________________________________________
 	  TASK [jinge.php : Add the ondrej PHP PPA] 
 	  ok: [default]
 
@@ -685,7 +685,7 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
 
 	  TASK [jinge.php : Remove Apache2]
 	  ok: [default]
-	  *****************************************************************************
+	  ___________________________________________________________________________
        
     By moving the tasks a separate role, you just made your roles reusable. If you need PHP on a machine in any playbook that you use in the future, you can add jinge.php to your list of roles to run and it will install all of the relevant packages.
 
@@ -694,22 +694,22 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
   #####################################
   What happens when someone who doesn’t understand it fully tries to use it and omits a dependency? You can use "meta/main.yml" to specify a role’s dependencies and have Ansible include them for you automatically.
   * Edit the jinge.wordpress/meta/main.yml and add the role dependencies:
-    ******************
+    __________________
     dependencies:
       - jinge.common
       - jinge.php
       - jinge.mysql
       - jinge.nginx
-    ******************
+    __________________
 
   * Next, edit playbook.yml so that only jinge.wordpress is in your list of roles. So, the playbook looks like below:
-    ***********************
+    _____________________
     ---
     - hosts: all
     become: true
     roles:
       - jinge.wordpress
-    **********************
+    _____________________
 
   ##############
   WRAPPER ROLE
@@ -719,7 +719,381 @@ Roles are the mechanism that you use to package up tasks, handlers, and everythi
   The alternative is to wrap this role up in another role that contains only the variables that you want to set. To do this, you create a role named jigne.hello_jinge. It doesn’t contain any tasks; it just specifies jinge.hello as a dependency: 
 
   In meta/main.yml :
+    _____________________
+    dependencies:
+    - role: jinge.hello
+      my_name: jinge
+    _____________________
 
-dependencies:
-  - role: jinge.hello
-    my_name: jinge
+  Then add the role in the playbook
+
+#####################################
+Parameterizing Playbooks
+#####################################
+
+Ansible has great support for variables, allowing you to use them both in playbooks and in files that are copied to the remote machine. You can use variables either as content (for example, in a templated configuration file or to specify a list of packages to install in a task) or as a way to decide what actions your playbook takes (such as whether you should generate a new MySQL password, seen in Chapter 3).
+
+Variables in Ansible are global. This means that whether you declare a variable in a role, in a playbook, or in any of the other locations available (which we’ll cover in this chapter), it can be used by all roles and playbooks loaded during the Ansible run. This further means that variables in a role are generally prefixed with the role name. For example, if you were to make the list of packages to install in the PHP role configurable, you would name the variable php_packages, not just packages.
+
+  #####################################
+  Add Variable For A ROLE
+  #####################################
+  * In addition to specifying a role to include in your playbook, you can specify any variables that you may want to use in that role. You’ll be using a different syntax for requiring a role, as you need to tell Ansible which entry is the role to run (done by prefixing it with role:). Any other values passed in at this time will be treated as variables that can be used in your tasks or templates:
+    _________________________________
+    ---
+    - hosts: all
+    become: true
+    roles:
+      - role: jinge.wordpress
+        database_name: jingewp
+        database_user: jingewp
+        database_password: apples
+    _________________________________
+
+  * There are two places that need to be updated in order to use these new variables instead of hardcoded values: your tasks file that creates the user and database, and your wp-config file that WordPress reads so that it knows which credentials to use to access the new database. Ansible knows to look for variables that are wrapped in curly braces like so: {{variable_name}}. This syntax is defined by Jinja2, which is the templating engine used by Ansible.
+
+	** Open up roles/jinge.wordpress/tasks/main.yml and change any place that has the database name, user, or password hardcoded to use our new variables instead:
+	  _______________________________________________________________________________________________________________________________________
+	  - name: Create WordPress MySQL database
+	    mysql_db: name="{{database_name}}" state=present
+	  - name: Create WordPress MySQL user
+	    mysql_user: name="{{database_user}}" host=localhost password="{{database_password}}" priv="{{database_name}}.*:ALL"
+	  - name: Does the database exist?
+	    command: mysql -u root {{database_name}} -e "SELECT ID FROM {{database_name}}.wp_users LIMIT 1;"
+	    register: db_exist
+	    ignore_errors: true
+	    changed_when: false
+	  - name: Copy WordPress DB
+	    copy: src=files/wp-database.sql dest=/tmp/wp-database.sql
+	    when: db_exist.rc == 1
+	  - name: Import WordPress DB
+	    mysql_db: target=/tmp/wp-database.sql state=import name="{{database_name}}"
+	    when: db_exist.rc == 1  
+	_______________________________________________________________________________________________________________________________________                              
+
+	** Update wp-config.php in the templates directory to use your variables as well. You use the same curly-brace syntax in a template as you do in a playbook:
+	  ___________________________________________________
+	  /** The name of the database for WordPress */
+	  define('DB_NAME', '{{database_name}}');
+	  
+	  /** MySQL database username */
+	  define('DB_USER', '{{database_user}}');
+	  
+	  /** MySQL database password */
+	  define('DB_PASSWORD', '{{database_password}}');
+	  ___________________________________________________
+
+
+
+  #####################################
+  CUSTOMIZING THE WORDPRESS DOMAIN NAME
+  #####################################
+
+  * Edit playbook.yml and add another variable that tells Ansible the WordPress domain name. Call this one wp_domain and set it to book.example.com:
+
+    ____________________________________
+    - role: mheap.wordpress
+  	  database_name: jingewp
+  	  database_user: jingewp
+  	  database_password: bananas
+  	  wp_domain: book.example.com
+  	  initial_post_title: Hey There
+  	  initial_post_content: >
+  	  This is an example post. Change me to say something interesting.
+   _______________________________________
+
+  * Replace the "book.example.com" with {{wp_domain}} in the files below:
+    __________________________________________
+    roles/mheap.nginx/templates/default
+    roles/mheap.wordpress/files/wp-database.sql
+    roles/mheap.wordpress/tasks/main.yml
+    __________________________________________
+
+  * Replace the "“Hello world!"" with {{initial_post_title}} in the "roles/mheap.wordpress/files/wp-database.sql"
+
+  * Replace the "“Welcome to WordPress"" with {{initial_post_content}} in the "roles/mheap.wordpress/files/wp-database.sql"
+
+  * The copy module doesn’t do anything to the file—it just copies it as is. To have your variables populated, you’ll need to use the template module instead. To do this, edit roles/mheap.wordpress/tasks/main.yml and change the word “copy” to “template” for the Copy WordPress DB task:
+    _________________________________________________________
+	- name: Copy WordPress DB
+  	  template: src=wp-database.sql dest=/tmp/wp-database.sql
+  	  when: db_exist.rc > 0
+  	_________________________________________________________
+
+  * As you’re now using the template module rather than the copy module, you also need to change where wp-database.sql lives. Move it out of the files directory and into the templates directory
+
+  ###################
+  Variable Locations
+  ###################
+  You can also define them in sixteen different locations! These locations are in the order of least to most important; that is, role defaults have the lowest precedence when it comes to setting variable values and are overridden by everything else. Inventory group variables override role defaults, but are themselves overridden by the set_fact module.
+
+  * ROLE DEFAULTS (COMMONLY USED)
+    This is the defaults/main.yml file in your role. Variables set in this file have the lowest precedence of any variables set, which makes it perfect for setting default values. For example, in jinge.hello/defaults/main.yml :
+      _________________
+      your_name: World
+      _________________
+
+  * INVENTORY VARIABLES
+    When you created an inventory file for Ansible to connect to your Vagrant machine, you used inventory variables. Most of the time you’ll only use inventory-specific variables in the inventory file (such as ansible_user or ansible_ssh_private_key-file, which we covered in Chapter 2 ), but you can set any variable you like. 
+
+    ** This variable will then only be available on this host. For example:
+      ______________________________
+      192.168.33.20 your_name=World
+      ______________________________
+
+    ** You can also specify variables for a group of hosts or a group of groups, such as:
+      _____________________
+      [app]
+	  192.168.33.20
+	  192.168.33.21
+	  
+	  [admin]
+	  192.168.33.33
+	  
+	  [database]
+	  192.168.33.55
+	  
+	  [websites:children]
+	  app
+	  admin
+	  
+	  [app:vars]
+	  your_name=World
+	  
+	  [admin:vars]
+	  your_name=World
+	  
+	  [database:vars]
+	  your_name=Michael
+	  
+	  [websites:vars]
+	  php_version: 7
+	  _____________________
+
+  * INVENTORY GROUP VARIABLES
+    To set group variables for the inventory, your inventory needs to be in its own folder. To use inventory group variables, you must create a folder called inventory/group_vars, which can contain variable files for any groups that you have created, such as with the following inventory/inventory file: 
+      ______________________________
+      [app]
+	  192.168.33.20
+	  192.168.33.21
+	  
+	  [admin]
+	  192.168.33.33
+	  
+	  [database]
+	  192.168.33.55
+      ______________________________
+
+      To specify group variables for the hosts in this inventory file, you must have a folder structure that looks like below:
+        ____________________
+      	inventory
+      	|-- group_vars
+      	|   |- admin.yml
+      	|   |- app.yml
+      	|   |- database.yml
+      	|__ inventory
+        ____________________
+      
+      Any variables that you define in inventory/group_vars/admin.yml will be available on any hosts in the admin group.
+  
+  * INVENTORY HOST VARIABLES
+    Similar to inventory/group_vars, you can specify variables per host. Using the same inventory file:
+      ______________
+      [app]
+	  192.168.33.20
+	  192.168.33.21
+	  
+	  [admin]
+	  192.168.33.33
+	  
+	  [database]
+	  192.168.33.55
+	  ______________
+
+	You can create a folder struture like below:
+      ____________________
+      inventory
+      |-- group_vars
+      |   |- admin.yml
+      |   |- app.yml
+      |   |- database.yml
+      |__ inventory
+      ____________________
+
+    Any variables defined in 192.168.33.20.yml will be available on the host 192.168.33.20.
+
+    Create inventory/host_vars/192.168.33.20.yml with the following contents:
+      _______________
+	  my_name: World
+	  _______________
+
+    This is functionally equivalent to having the following in your inventory file:
+      ____________________________
+	  192.168.33.20 my_name=World
+	  ____________________________  
+  
+  * PLAYBOOK GROUP VARIABLES (COMMONLY USED)
+    Group variables can also be defined at the playbook level in a group_vars folder. They look and behave exactly like the inventory group_vars folder, except that they are at the same level as playbook.yml and have a slightly higher precedence. 
+
+  * PLAYBOOK HOST VARIABLES (COMMONLY USED)
+	Just like group variables, host variables can be defined at the playbook level. They’re functionally equivalent to the inventory host_vars, but with a slightly higher precedence.    
+
+  * HOST FACTS
+	Ansible has the concept of a “fact,” which is information that is available about the current host. There are facts available for lots of different information, including which operating system the machine is running, what its IP address is, and even how much memory is being used on the machine. These facts exist during an Ansible run as variables for you to use in your playbooks and templates.
+
+	When Ansible runs, it runs the setup module to gather facts about a host. If you define facts with the same names as role defaults or group or host variables, they will be overwritten with the host facts (as host facts have a higher priority). If you register a variable or use the set_fact module using the same name as a built-in fact, the host fact will be overwritten.
+
+	For example, the setup module returns a fact named ansible_all_ipv4_addresses, which is a list of all IPv4 addresses on the box. All facts are prefixed with ansible_, so it is difficult to overwrite them accidentally.
+
+	To see which facts are available for a host, you can use the setup module as follows:
+	_____________________________________________
+	ansible all –i /path/to/inventory –m setup  
+	_____________________________________________
+
+  * REGISTERED VARIABLES (COMMONLY USED)
+	When working within a playbook, you may want to save the output from modules to access in a later step. For example, the following playbook stores filesystem information about /etc/hosts in a variable called hosts_info:
+	_____________________________
+	---
+	- hosts: all
+	  tasks:
+	    - stat: path=/etc/hosts
+	      register: hosts_info
+	    - debug: var=hosts_info
+	_____________________________
+
+	If the variable hosts_info was defined in any location with a lower priority than registered variables, it would now be overwritten. This can lead to bugs that are hard to track down where a variable has one value before this task runs, but a different value after the task has run. Using variable prefixes can help to avoid this.
+
+  * SET FACTS
+	You can also explicitly set facts in a playbook to be used later. It only really starts to become useful when you need to manipulate the results of another module call in a playbook.
+
+	Here’s another simple example that shows off variable manipulation, taking the output of the stat module and converting it to be upper case:
+	__________________________________________________________
+	- hosts: all
+      tasks:
+      - stat: path=/etc/hosts
+        register: host_info
+      - set_fact: example_var="{{host_info.stat.path|upper}}"
+      - debug: var=example_var
+    __________________________________________________________
+
+  * PLAYBOOK VARIABLES
+	You can set variables directly in a playbook if you want to override a few variables when including roles, or if you just need to write a small playbook and want to keep everything in the same file to minimize the number of files created.
+
+	To define variables in a playbook, you just create a vars section at the same level as tasks:
+    __________________________________________________________
+	---
+	- hosts: all
+	  gather_facts: false
+	  vars:
+	    your_name: World
+	  tasks:
+	    - debug: msg="Hello {{your_name}}"
+    __________________________________________________________
+
+  * PLAYBOOK VARS_PROMPT
+  	You can collect this information from the end user by specifying a vars_prompt section in your playbook. When you run the playbook, it will ask the questions you’ve specified and record the answers, ready to be used as variables, as shown in the following snippet:
+    ___________________________________________________________________________________________________________________
+	---
+	- hosts: all
+	  vars_prompt:
+	    - name: your_name
+	      prompt: "What is your name?"
+	  tasks:
+	    - debug: msg="Hello {{your_name}}"
+	It’s important to note that when Ansible prompts you for a value, it does not show the value as you type. This is in case you are entering any sensitive information. Otherwise, it would be available if someone scrolled back through your history.
+    ___________________________________________________________________________________________________________________
+
+ * PLAYBOOK VAR_FILES
+   Playbooks will read group_vars and host_vars by default, but you can also instruct them to read additional variable files via the vars_files parameter in a playbook. This playbook will load the vars_file in the same folder as that in which the playbook is running. The format of these variable files is the same as group_vars and host_vars.
+
+   Also you can read user input with a vars_prompt and use that to include a vars_file and provide defaults for vars_files, and Ansible will include the first one that it finds. This works really well when coupled with user inputs or variables. If you specify a valid user, it will use that user; otherwise, it will fall back to default_user. 
+    ___________________________________________________________________________________________________________________
+	---
+	- hosts: all
+  	  vars_prompt:
+        - name: include_file
+        prompt: "Which file should we include?"
+
+  	  vars_files:
+    	- ["{{include_file}}.yml", "default_user.yml"]
+
+      tasks:
+        - debug: msg="Hello {{your_name}} from {{location}}"
+    _____________________________________________________________________________________________________
+
+  * ROLE VARIABLES (COMMONLY USED)
+	When using roles in a playbook, you can specify variables that should be used when running that role. You used this earlier when setting values for the variables required by your WordPress role:
+    __________________________________________
+	---
+	- hosts: all
+  	become: true
+  		roles:
+    	  - role: mheap.wordpress
+      	 	database_name: michaelwp
+      		database_user: michaelwp
+      		database_password: bananas18374
+    __________________________________________
+
+  * BLOCK VARIABLES
+	A block in Ansible is a grouping of tasks. It allows for error handling in playbooks and also for applying settings to groups of tasks all at once. you can use a block to provide any variables that will only apply to tasks within that block. To do this, you provide the vars argument and place any variables that should be available underneath it:
+    __________________________________________
+	---
+	- hosts: all
+	  tasks:
+	    - block:
+	      - debug: msg="Hello {{your_name}}"
+	      - debug: msg="How are you {{your_name}}?"
+	      vars:
+	        your_name: Michael
+    __________________________________________
+
+  * TAKS VARIABLES
+	Same as block variables, you can specify variables at a per-task level
+    ____________________________________________________________________
+	---
+	- hosts: all
+  	tasks:
+      - template: src=webserver.conf dest=”/etc/{{name}}/{{name}}.conf”
+        vars:
+          name: apache2
+    ____________________________________________________________________
+
+  * EXTRA VARIABLES
+	Extra variables are specified at runtime and have the highest priority of all variables set. This means that no matter where a value has been set, you can overwrite it if you really want to do so:
+
+	You specify extra variables with the –e flag on the command line when you run ansible-playbook. You can specify multiple –e flags to set as many variables as you like. For example, examine the following code:
+    _____________________________________________________________________________________________
+	ansible-playbook –i /path/to/inventory playbook.yml –e 'your_name=Fred' –e 'my_name=Michael'
+    _____________________________________________________________________________________________
+
+	Alternatively, you can specify additional variables in the JSON format:
+    _________________________________________________________________________________________________
+	ansible-playbook –i /path/to/inventory playbook.yml –e '{"your_name":"Fred","my_name":"Michael"}'
+    _________________________________________________________________________________________________
+
+	If you have lots of additional variables, you may prefer to pass a filename that will be read instead:
+    _________________________________________________________________________________________________
+	ansible-playbook –i /path/to/inventory playbook.yml –e @large_variable_file.json 
+    _________________________________________________________________________________________________
+
+  * Gathering Facts
+	When Ansible starts up, it uses the setup module to gather information about the current host using as many different tools as possible. Everything within the ansible_facts key in the returned dictionary is available as a variable in your playbooks and templates. There are lots of useful facts, such as the architecture of the system, the current date/time, ipv4 and ipv6 information for all network adapters available, and more. You can even work out how much memory is free on the target machine with ansible_memfree_mb. You can also take a look at the ansible_env variable, which contains all of the environment variables available on a system. (Remember, you can use these in your playbooks!) I highly recommend running the setup module and taking a look at all of the information available. You can run the setup module by hand with the following command:
+    __________________________________
+	ansible all –i inventory –m setup
+    __________________________________
+
+    You may have noticed that Ansible takes a little while to start up when gathering facts about the current host. If you don’t plan to use these facts, you can disable them in your playbook by setting gather_facts to false:
+    __________________________________
+	- hosts: all
+  	gather_facts: false
+  	  tasks:
+        - debug: msg="Hello Michael"
+    __________________________________
+
+
+############################
+Pairing Docker with Ansible
+############################
+There are two areas where Ansible simplifies working with Docker. One is in the orchestration of Docker containers. When you deploy a “Dockerized” software app, you’re typically creating multiple Docker containers that contain different services. These services need to communicate with each other, so you need to connect the appropriate containers correctly and ensure they start up in the right order. Initially, the Docker project did not provide orchestration tools, so third-party tools emerged to fill in the gap. Ansible was built for doing orchestration, so it’s a natural fit for deploying your Docker-based application.
+
+The other area is the creation of Docker images. The official way to create your own Docker images is by writing special text files called Dockerfiles, which resemble shell scripts. For simpler images, Dockerfiles work just fine. However, when you start to create more-complex images, you’ll quickly miss the power that Ansible provides. Fortunately, you can use Ansible to create playbooks.

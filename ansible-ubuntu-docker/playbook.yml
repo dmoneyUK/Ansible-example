@@ -1,0 +1,17 @@
+---
+- hosts: all
+  become: true
+  vars:
+    pip_install_packages:
+      - name: docker
+
+  roles:
+    - geerlingguy.pip
+    - geerlingguy.docker
+    - jinge.dockerized
+
+- hosts: docker-container
+  tasks: 
+    - name: Test docker-container
+      ping:
+

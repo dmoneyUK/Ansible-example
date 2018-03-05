@@ -4,6 +4,6 @@
 #  vars:
 #    my_name: jinge
   roles:
-     - jinge.wordpress
+    - jinge.wordpress
     # - jinge.hello
     # - jinge.hello_jinge

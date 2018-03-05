@@ -1,0 +1,10 @@
+---
+# tasks file for jinge.nginx
+# Nginx
+- name: Install nginx
+  apt: name=nginx state=latest
+- name: Start nginx
+  service: name=nginx state=running
+- name: Create nginx config
+  template: src=default dest=/etc/nginx/sites-available/default
+  notify: restart nginx

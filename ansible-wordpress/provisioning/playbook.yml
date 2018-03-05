@@ -60,6 +60,7 @@
     # Nginx
     - name: Install nginx
       apt: name=nginx state=latest
+    
     - name: Start nginx
       service: name=nginx state=running
 

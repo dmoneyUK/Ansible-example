@@ -1,0 +1,4 @@
+---
+#- tasks file for jinge.hello
+- name: Say Hello
+  debug: msg="Hello {{my_name}}" 

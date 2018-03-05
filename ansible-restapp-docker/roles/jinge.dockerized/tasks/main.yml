@@ -1,0 +1,15 @@
+---
+# tasks file for jinge.dockerized
+- name: Pull daijigne's dokcer image
+  docker_image:
+    name: daijinge/rest-example
+
+- name: Create a docker container from the docker image
+  docker_container:
+    name: app-server
+    image: daijinge/rest-example
+    ports:
+      - "8080:8080"
+    state: started
+    
+
