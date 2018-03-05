@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: rest.docker.server
   become: true
   vars:
     pip_install_packages:
